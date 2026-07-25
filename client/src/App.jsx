@@ -13,7 +13,7 @@ import PaymentFailed from './pages/PaymentFailed';
 function App() {
     return (
         <Router>
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen flex flex-col">
                 <Navbar />
                 <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <Routes>
@@ -25,7 +25,14 @@ function App() {
                         <Route path="/admin" element={<AdminDashboard />} />
                         <Route path="/payment-success" element={<PaymentSuccess />} />
                         <Route path="/payment-failed" element={<PaymentFailed />} />
-                        <Route path="*" element={<h1 className="text-3xl font-bold text-center mt-20">404 - Page Not Found</h1>} />
+                        <Route path="*" element={
+                            <div className="flex items-center justify-center min-h-[60vh]">
+                                <div className="text-center">
+                                    <h1 className="text-8xl font-black gradient-text mb-4">404</h1>
+                                    <p className="text-slate-400 text-xl">Page not found</p>
+                                </div>
+                            </div>
+                        } />
                     </Routes>
                 </main>
             </div>

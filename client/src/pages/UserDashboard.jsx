@@ -2,7 +2,19 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaTicketAlt, FaTimesCircle } from 'react-icons/fa';
+import { FaTicketAlt, FaTimesCircle, FaCalendarAlt, FaRupeeSign, FaRegClock } from 'react-icons/fa';
+
+const statusConfig = {
+    confirmed: { label: 'Confirmed', cls: 'badge-confirmed' },
+    cancelled: { label: 'Cancelled', cls: 'badge-cancelled' },
+    pending: { label: 'Pending', cls: 'badge-pending' },
+};
+
+const paymentConfig = {
+    paid: { label: 'Paid', cls: 'badge-paid' },
+    not_required: { label: 'Not Required', cls: 'badge-pending' },
+    pending: { label: 'Payment Pending', cls: 'badge-pending' },
+};
 
 const UserDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -11,10 +23,7 @@ const UserDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
+        if (!user) { navigate('/login'); return; }
         fetchBookings();
     }, [user, navigate]);
 
@@ -30,7 +39,7 @@ const UserDashboard = () => {
     };
 
     const cancelBooking = async (id) => {
-        if (window.confirm('Are you sure you want to cancel this booking request?')) {
+        if (window.confirm('Cancel this booking request?')) {
             try {
                 await api.delete(`/bookings/${id}`);
                 fetchBookings();
@@ -40,85 +49,148 @@ const UserDashboard = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-20 text-xl font-semibold">Loading dashboard...</div>;
+    if (loading) {
+        return (
+            <div className="max-w-6xl mx-auto animate-fade-in">
+                <div className="skeleton h-28 w-full rounded-2xl mb-8" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-56 rounded-2xl" />)}
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 mb-8 border border-gray-100 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6">
-                <div className="w-20 h-20 bg-gray-200 text-gray-900 rounded-full flex items-center justify-center text-3xl font-bold uppercase tracking-widest shrink-0">
-                    {user?.name.charAt(0)}
-                </div>
-                <div className="flex flex-col items-center sm:items-start">
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Welcome, {user?.name}!</h1>
-                    <p className="text-gray-500 flex items-center justify-center sm:justify-start gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span> User Dashboard
-                    </p>
-                </div>
-            </div>
+        <div className="max-w-6xl mx-auto animate-fade-in-up">
 
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2 sm:gap-3">
-                    <FaTicketAlt className="text-gray-700" /> My Bookings requests
-                </h2>
-            </div>
+            {/* ─── Profile Banner ─── */}
+            <div className="relative rounded-2xl overflow-hidden mb-8 p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-5"
+                style={{
+                    background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(219,39,119,0.1) 100%)',
+                    border: '1px solid rgba(139,92,246,0.25)',
+                    backdropFilter: 'blur(20px)'
+                }}>
+                {/* Gradient orb */}
+                <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: 200, height: 200, borderRadius: '50%', background: 'rgba(124,58,237,0.2)', filter: 'blur(50px)', pointerEvents: 'none' }} />
 
-            {bookings.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-100">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <FaTicketAlt className="text-gray-300 text-3xl" />
+                <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black text-white shrink-0 relative z-10"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)', boxShadow: '0 8px 25px rgba(124,58,237,0.4)' }}
+                >
+                    {user?.name?.charAt(0).toUpperCase()}
+                </div>
+
+                <div className="flex flex-col items-center sm:items-start relative z-10 text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-1">
+                        Welcome back, <span className="gradient-text">{user?.name}</span>!
+                    </h1>
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        User Dashboard
+                        <span className="text-slate-600">·</span>
+                        <span>{bookings.length} booking{bookings.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <p className="text-xl text-gray-500 mb-6 mt-4 font-medium">You haven't booked any events yet.</p>
-                    <Link to="/" className="inline-block bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg transition shadow-md">
-                        Browse Events
+                </div>
+            </div>
+
+            {/* ─── Bookings Heading ─── */}
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                    style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}>
+                    <FaTicketAlt />
+                </div>
+                <h2 className="text-xl font-bold text-white">My Booking Requests</h2>
+            </div>
+
+            {/* ─── Empty State ─── */}
+            {bookings.length === 0 ? (
+                <div className="glass-card p-16 text-center animate-fade-in">
+                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl"
+                        style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#a78bfa' }}>
+                        <FaTicketAlt />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No bookings yet</h3>
+                    <p className="text-slate-400 mb-6 text-sm">You haven't booked any events. Start exploring!</p>
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-2 font-bold px-6 py-3 rounded-xl text-white transition-all duration-200"
+                        style={{
+                            background: 'linear-gradient(135deg, #7c3aed, #db2777)',
+                            boxShadow: '0 4px 15px rgba(124,58,237,0.4)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Browse Events →
                     </Link>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {bookings.map((booking) => (
-                        <div key={booking._id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition border border-gray-100 flex flex-col">
-                            <div className="p-6 border-b border-gray-50 flex-grow">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {bookings.map((booking, idx) => (
+                        <div
+                            key={booking._id}
+                            className="event-card flex flex-col animate-fade-in-up"
+                            style={{ animationDelay: `${idx * 0.07}s` }}
+                        >
+                            {/* Card Header */}
+                            <div className="p-5 flex-grow">
                                 {booking.eventId ? (
                                     <>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <h3 className="text-lg font-bold text-gray-900 leading-tight">{booking.eventId.title}</h3>
-                                            <div className="flex flex-col gap-1 items-end">
-                                                <span className={`px-2 py-1 text-[10px] font-black rounded uppercase tracking-wider ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                                    booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                        'bg-yellow-100 text-yellow-700'
-                                                    }`}>
-                                                    {booking.status}
+                                        <div className="flex justify-between items-start mb-3 gap-2">
+                                            <h3 className="text-base font-bold text-white leading-tight">{booking.eventId.title}</h3>
+                                            <div className="flex flex-col gap-1 items-end shrink-0">
+                                                <span className={`px-2 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wide ${statusConfig[booking.status]?.cls || 'badge-pending'}`}>
+                                                    {statusConfig[booking.status]?.label || booking.status}
                                                 </span>
                                                 {booking.status !== 'cancelled' && (
-                                                    <span className={`px-2 py-1 text-[10px] font-black rounded uppercase tracking-wider ${booking.paymentStatus === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                        {booking.paymentStatus.replace('_', ' ')}
+                                                    <span className={`px-2 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wide ${paymentConfig[booking.paymentStatus]?.cls || 'badge-pending'}`}>
+                                                        {paymentConfig[booking.paymentStatus]?.label || booking.paymentStatus}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="text-sm text-gray-500 mb-4 space-y-1">
-                                            <p><strong className="text-gray-700">Date:</strong> {new Date(booking.eventId.date).toLocaleDateString()}</p>
-                                            <p><strong className="text-gray-700">Amount:</strong> {booking.amount === 0 ? 'Free' : `₹${booking.amount}`}</p>
-                                            <p><strong className="text-gray-700">Requested:</strong> {new Date(booking.bookedAt).toLocaleDateString()}</p>
+
+                                        <div className="space-y-2 text-sm text-slate-400">
+                                            <div className="flex items-center gap-2">
+                                                <FaCalendarAlt className="text-violet-400 shrink-0 text-xs" />
+                                                <span>{new Date(booking.eventId.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <FaRupeeSign className="text-pink-400 shrink-0 text-xs" />
+                                                <span>{booking.amount === 0 ? 'Free' : `₹${booking.amount}`}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <FaRegClock className="text-amber-400 shrink-0 text-xs" />
+                                                <span>Requested {new Date(booking.bookedAt).toLocaleDateString()}</span>
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
-                                    <p className="text-red-500 italic">Event details unavailable (might have been deleted)</p>
+                                    <p className="text-slate-500 italic text-sm">Event details unavailable</p>
                                 )}
                             </div>
-                            <div className="p-4 bg-gray-50 flex justify-between items-center shrink-0">
+
+                            {/* Card Footer */}
+                            <div className="px-5 py-3 flex justify-between items-center"
+                                style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                                 {booking.eventId && booking.status !== 'cancelled' ? (
                                     <>
-                                        <Link to={`/events/${booking.eventId._id}`} className="text-gray-900 font-semibold text-sm hover:underline">View Event</Link>
+                                        <Link
+                                            to={`/events/${booking.eventId._id}`}
+                                            className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition"
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            View Event →
+                                        </Link>
                                         <button
                                             onClick={() => cancelBooking(booking._id)}
-                                            className="text-red-500 font-semibold text-sm hover:text-red-700 transition flex items-center gap-1"
+                                            className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-red-400 transition"
+                                            style={{ cursor: 'pointer' }}
                                         >
-                                            <FaTimesCircle /> Cancel
+                                            <FaTimesCircle className="text-xs" /> Cancel
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="w-full text-center text-sm text-gray-500 italic">Booking Cancelled</div>
+                                    <span className="text-slate-500 text-sm italic w-full text-center">Booking Cancelled</span>
                                 )}
                             </div>
                         </div>
